@@ -77,9 +77,10 @@ endforeach()
 # Helper function: generate ROOT dictionaries
 # -----------------------------------------------------------
 function(add_dictionary libname headers linkdef)
-  ROOT_GENERATE_DICTIONARY(
+  root_generate_dictionary(
     ${libname}_dict
     "${headers}"
+    MODULE ${libname}
     LINKDEF "${linkdef}"
     OPTIONS ${ROOT_DICTIONARY_INCLUDE_OPTIONS}
   )
@@ -105,14 +106,15 @@ macro(add_unpacker_lib name sources headers linkdef)
     set(ARG_DEPS)
   endif()
 
-  # Generate dictionary source
-  add_dictionary(${name} "${headers}" "${linkdef}")
-
   # Add library with ALL source files (both .cc and generated dict)
   add_library(${name} SHARED 
     ${sources} 
-    ${CMAKE_CURRENT_BINARY_DIR}/${name}_dict.cxx
+    #${CMAKE_CURRENT_BINARY_DIR}/${name}_a.cxx
   )
+
+  # Generate dictionary source
+  add_dictionary(${name} "${headers}" "${linkdef}")
+
 
   target_include_directories(${name}
     PUBLIC
@@ -201,8 +203,8 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     common_unpacking
     nalu_data_products
     nalu_unpacking)
-    set(dict_rootmap "${CMAKE_CURRENT_BINARY_DIR}/lib${lib}_dict.rootmap")
-    set(dict_pcm "${CMAKE_CURRENT_BINARY_DIR}/lib${lib}_dict_rdict.pcm")
+    set(dict_rootmap "${CMAKE_CURRENT_BINARY_DIR}/lib${lib}.rootmap")
+    set(dict_pcm "${CMAKE_CURRENT_BINARY_DIR}/lib${lib}_rdict.pcm")
 
     install(FILES
       "${dict_rootmap}"
