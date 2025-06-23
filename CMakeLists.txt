@@ -116,7 +116,7 @@ add_unpacker_lib(
   common_data_products
   "${COMMON_DATA_PRODUCTS_SRCS}"
   "${COMMON_DATA_PRODUCTS_HEADERS}"
-  "${CMAKE_SOURCE_DIR}/include/common/data_products/LinkDef.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/common/data_products/LinkDef.h"
   "${ROOT_LIBRARIES}"
 )
 
@@ -124,7 +124,7 @@ add_unpacker_lib(
   common_unpacking
   "${COMMON_UNPACKING_SRCS}"
   "${COMMON_UNPACKING_HEADERS}"
-  "${CMAKE_SOURCE_DIR}/include/common/unpacking/LinkDef.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/common/unpacking/LinkDef.h"
   "common_data_products;${ROOT_LIBRARIES};nlohmann_json::nlohmann_json;${MIDASSYS_LIB_DIR}/libmidas.a;${MIDASSYS_LIB_DIR}/libmfe.a"
 )
 
@@ -132,7 +132,7 @@ add_unpacker_lib(
   nalu_data_products
   "${NALU_DATA_PRODUCTS_SRCS}"
   "${NALU_DATA_PRODUCTS_HEADERS}"
-  "${CMAKE_SOURCE_DIR}/include/nalu/data_products/LinkDef.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/nalu/data_products/LinkDef.h"
   "common_data_products"
 )
 
@@ -140,7 +140,7 @@ add_unpacker_lib(
   nalu_unpacking
   "${NALU_UNPACKING_SRCS}"
   "${NALU_UNPACKING_HEADERS}"
-  "${CMAKE_SOURCE_DIR}/include/nalu/unpacking/LinkDef.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/nalu/unpacking/LinkDef.h"
   "common_unpacking;nalu_data_products;${ROOT_LIBRARIES}"
 )
 
