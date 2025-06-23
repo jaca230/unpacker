@@ -42,10 +42,10 @@ include(${ROOT_USE_FILE})
 # -----------------------------------------------------------
 # Source and header files
 # -----------------------------------------------------------
-file(GLOB_RECURSE COMMON_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS common/data_products/*.cc)
-file(GLOB_RECURSE COMMON_UNPACKING_SRCS CONFIGURE_DEPENDS common/unpacking/*.cc)
-file(GLOB_RECURSE NALU_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS nalu/data_products/*.cc)
-file(GLOB_RECURSE NALU_UNPACKING_SRCS CONFIGURE_DEPENDS nalu/unpacking/*.cc)
+file(GLOB_RECURSE COMMON_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS src/common/data_products/*.cc)
+file(GLOB_RECURSE COMMON_UNPACKING_SRCS CONFIGURE_DEPENDS src/common/unpacking/*.cc)
+file(GLOB_RECURSE NALU_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS src/nalu/data_products/*.cc)
+file(GLOB_RECURSE NALU_UNPACKING_SRCS CONFIGURE_DEPENDS src/nalu/unpacking/*.cc)
 
 file(GLOB_RECURSE COMMON_DATA_PRODUCTS_HEADERS CONFIGURE_DEPENDS include/common/data_products/*.hh)
 file(GLOB_RECURSE COMMON_UNPACKING_HEADERS CONFIGURE_DEPENDS include/common/unpacking/*.hh)
@@ -88,12 +88,31 @@ endfunction()
 # -----------------------------------------------------------
 # Macro to add a library with dictionary and proper install/export
 # -----------------------------------------------------------
-macro(add_unpacker_lib name sources headers linkdef deps)
+macro(add_unpacker_lib name sources headers linkdef)
+  # Get all args passed to macro
+  set(_args)
+  foreach(_arg IN LISTS ARGN)
+    list(APPEND _args "${_arg}")
+  endforeach()
+
+  set(options)
+  set(oneValueArgs)
+  set(multiValueArgs DEPS)
+
+  if(_args)
+    cmake_parse_arguments(ARG "" "" "DEPS" ${_args})
+  else()
+    set(ARG_DEPS)
+  endif()
+
   # Generate dictionary source
   add_dictionary(${name} "${headers}" "${linkdef}")
 
-  # Add library, including dictionary source file
-  add_library(${name} SHARED ${sources} ${CMAKE_CURRENT_BINARY_DIR}/${name}_dict.cxx)
+  # Add library with ALL source files (both .cc and generated dict)
+  add_library(${name} SHARED 
+    ${sources} 
+    ${CMAKE_CURRENT_BINARY_DIR}/${name}_dict.cxx
+  )
 
   target_include_directories(${name}
     PUBLIC
@@ -103,9 +122,10 @@ macro(add_unpacker_lib name sources headers linkdef deps)
       ${ROOT_INCLUDE_DIRS}
   )
 
-  target_link_libraries(${name} PUBLIC ${deps})
+  if(ARG_DEPS)
+    target_link_libraries(${name} PUBLIC ${ARG_DEPS})
+  endif()
 
-  # Add an ALIAS target for convenience and namespace usage
   add_library(unpacker::${name} ALIAS ${name})
 endmacro()
 
@@ -117,7 +137,7 @@ add_unpacker_lib(
   "${COMMON_DATA_PRODUCTS_SRCS}"
   "${COMMON_DATA_PRODUCTS_HEADERS}"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/common/data_products/LinkDef.h"
-  "${ROOT_LIBRARIES}"
+  DEPS ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
 )
 
 add_unpacker_lib(
@@ -125,7 +145,11 @@ add_unpacker_lib(
   "${COMMON_UNPACKING_SRCS}"
   "${COMMON_UNPACKING_HEADERS}"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/common/unpacking/LinkDef.h"
-  "common_data_products;${ROOT_LIBRARIES};nlohmann_json::nlohmann_json;${MIDASSYS_LIB_DIR}/libmidas.a;${MIDASSYS_LIB_DIR}/libmfe.a"
+  DEPS common_data_products
+       ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
+       nlohmann_json::nlohmann_json
+       ${MIDASSYS_LIB_DIR}/libmidas.a
+       ${MIDASSYS_LIB_DIR}/libmfe.a
 )
 
 add_unpacker_lib(
@@ -133,7 +157,7 @@ add_unpacker_lib(
   "${NALU_DATA_PRODUCTS_SRCS}"
   "${NALU_DATA_PRODUCTS_HEADERS}"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/nalu/data_products/LinkDef.h"
-  "common_data_products"
+  DEPS common_data_products
 )
 
 add_unpacker_lib(
@@ -141,7 +165,9 @@ add_unpacker_lib(
   "${NALU_UNPACKING_SRCS}"
   "${NALU_UNPACKING_HEADERS}"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/nalu/unpacking/LinkDef.h"
-  "common_unpacking;nalu_data_products;${ROOT_LIBRARIES}"
+  DEPS common_unpacking
+       nalu_data_products
+       ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
 )
 
 # -----------------------------------------------------------
@@ -168,24 +194,23 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.hh"
   )
-    # Install ROOT dictionary files by explicit paths, no checks at configure time
-    foreach(lib IN ITEMS
+
+  # Install ROOT dictionary files by explicit paths
+  foreach(lib IN ITEMS
     common_data_products
     common_unpacking
     nalu_data_products
     nalu_unpacking)
-
     set(dict_rootmap "${CMAKE_CURRENT_BINARY_DIR}/lib${lib}_dict.rootmap")
     set(dict_pcm "${CMAKE_CURRENT_BINARY_DIR}/lib${lib}_dict_rdict.pcm")
 
     install(FILES
-        "${dict_rootmap}"
-        "${dict_pcm}"
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        OPTIONAL
+      "${dict_rootmap}"
+      "${dict_pcm}"
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      OPTIONAL
     )
-    endforeach()
-
+  endforeach()
 
   # Generate and install version file for config package
   write_basic_package_version_file(
