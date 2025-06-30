@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Usage: ./unpack.sh [--input <file>] [--verbosity <level>] [--help]
+# Usage: ./unpack.sh [--input <file>] [--verbosity <level>] [--debug] [--help]
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
-UNPACKER_EXECUTABLE="${PROJECT_ROOT}/bin/unpacker"
+UNPACKER_EXECUTABLE="${PROJECT_ROOT}/bin/unpack_main"
 SETENV_SCRIPT="${SCRIPT_DIR}/setenv.sh"
 
 # Source setenv.sh to configure environment variables
@@ -18,6 +18,7 @@ fi
 # Default values
 INPUT_FILE="${PROJECT_ROOT}/data/run00001.mid"
 VERBOSITY=1
+DEBUG_MODE=0
 
 print_help() {
   echo "Usage: ./unpack.sh [options]"
@@ -25,6 +26,7 @@ print_help() {
   echo "Options:"
   echo "  --input <file>       Input MIDAS file (default: ./data/run00001.mid)"
   echo "  --verbosity <level>  Verbosity level (default: 1)"
+  echo "  --debug              Run under gdb debugger"
   echo "  -h, --help           Show this help message and exit"
   exit 0
 }
@@ -39,6 +41,10 @@ while [[ $# -gt 0 ]]; do
     --verbosity)
       VERBOSITY="$2"
       shift 2
+      ;;
+    --debug)
+      DEBUG_MODE=1
+      shift
       ;;
     -h|--help)
       print_help
@@ -55,5 +61,9 @@ done
 echo "[unpack.sh] Running unpacker..."
 echo "  Input file:  ${INPUT_FILE}"
 echo "  Verbosity:   ${VERBOSITY}"
-
-"${UNPACKER_EXECUTABLE}" "${INPUT_FILE}" "${VERBOSITY}"
+if [[ "${DEBUG_MODE}" -eq 1 ]]; then
+  echo "  Debug mode:  enabled"
+  gdb --args "${UNPACKER_EXECUTABLE}" "${INPUT_FILE}" "${VERBOSITY}"
+else
+  "${UNPACKER_EXECUTABLE}" "${INPUT_FILE}" "${VERBOSITY}"
+fi

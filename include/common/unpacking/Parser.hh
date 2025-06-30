@@ -64,6 +64,21 @@ namespace parsers {
             mask_0(BitMask(num_bytes_0)),
             mask_1(BitMask(num_bytes_1))
             {}
+
+        // ToString method for debugging
+        std::string ToString() const {
+            std::ostringstream oss;
+            oss << "DataLocation(word_0=" << word_0
+                << ", bit_0=" << bit_0
+                << ", num_bytes_0=" << num_bytes_0;
+            if (word_1 != word_0 || bit_1 != bit_0 || num_bytes_1 != num_bytes_0) {
+                oss << ", word_1=" << word_1
+                    << ", bit_1=" << bit_1
+                    << ", num_bytes_1=" << num_bytes_1;
+            }
+            oss << ")";
+            return oss.str();
+        }
     };
 
     class Parser {

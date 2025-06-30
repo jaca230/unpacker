@@ -7,7 +7,7 @@ namespace dataProducts {
 
     /**
      * @class NaluPacketFooter
-     * @brief Represents the footer information for a NALU packet.
+     * @brief Represents the footer information for a NALU packet, including fluff.
      *
      * Inherits from DataProduct.
      */
@@ -20,11 +20,20 @@ namespace dataProducts {
             NaluPacketFooter();
 
             /**
-             * @brief Constructor with event index.
-             * @param parser_index Parser index
-             * @param packet_footer Packet footer
+             * @brief Constructor with full footer fields including fluff.
+             * @param parser_index Parser index value extracted from footer.
+             * @param start_udp_packet_index Start UDP packet index.
+             * @param end_udp_packet_index End UDP packet index.
+             * @param fluff The 4-byte fluff value.
+             * @param packet_footer The footer word value.
              */
-            NaluPacketFooter(uint32_t parser_index, uint32_t packet_footer);
+            NaluPacketFooter(
+                uint32_t parser_index,
+                uint32_t start_udp_packet_index,
+                uint32_t fluff,
+                uint32_t end_udp_packet_index,
+                uint32_t packet_footer
+            );
 
             /**
              * @brief Destructor.
@@ -37,12 +46,28 @@ namespace dataProducts {
             uint32_t parser_index;
 
             /**
-             * @brief Packet footer.
+             * @brief Start UDP packet index.
+             */
+            uint32_t start_udp_packet_index;
+
+            /**
+             * @brief 4-byte fluff data inserted before footer.
+             */
+            uint32_t fluff;
+
+            /**
+             * @brief End UDP packet index.
+             */
+            uint32_t end_udp_packet_index;
+
+            /**
+             * @brief Packet footer word.
              */
             uint32_t packet_footer;
 
             /**
-             * @brief Make a string of this class's contents.
+             * @brief Make a string representation of this class's contents.
+             * @return String containing all footer info.
              */
             std::string String() const;
 

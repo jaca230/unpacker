@@ -12,6 +12,7 @@ __pycache__/
 scripts/autoProcessWithArtsHistsListQuick.sh
 src/dataProducts/WaveformFitter.cc
 **.root_*
+**.mid*
 database/setup_secrets.sh
 database/test_data_location
 *.pdf

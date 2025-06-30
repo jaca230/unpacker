@@ -37,9 +37,9 @@ int ADPayloadUnpacker::Unpack(const uint64_t* words, unsigned int& wordNum) {
 
     // std::cout << "wordNum: " << wordNum << std::endl;
 
-    // Get the event header, which is 3 64 bit words long
+    // Get the event header, which is 4 64 bit words long
 
-    std::vector<uint64_t> header_words = unpackers::GetXWords(words,wordNum,3,"le");
+    std::vector<uint64_t> header_words = unpackers::GetXWords(words,wordNum,4,"le");
     // for (int i = 0; i < header_words.size(); ++i)
     // {
     //     std::cout << std::hex << std::setw(16) << std::setfill('0') << header_words.at(i) << std::endl;
@@ -109,8 +109,8 @@ int ADPayloadUnpacker::Unpack(const uint64_t* words, unsigned int& wordNum) {
 
         // --- FOOTER ---
 
-        // Extract 1 64-bit word for the packet footer (little-endian)
-        std::vector<uint64_t> packet_footer_words = unpackers::GetXWords(words, wordNum, 1, "le");
+        // Extract 2 64-bit word for the packet footer (little-endian)
+        std::vector<uint64_t> packet_footer_words = unpackers::GetXWords(words, wordNum, 2, "le");
 
         // Parse the footer
         naluPacketFooterParser_->SetWords(packet_footer_words);
@@ -125,30 +125,10 @@ int ADPayloadUnpacker::Unpack(const uint64_t* words, unsigned int& wordNum) {
 
         // Sort the packets by window position
         auto packets = val.second;
-
         std::sort(packets.begin(), packets.end(),
         [](const dataProducts::NaluPacket& a, const dataProducts::NaluPacket& b) {
             return a.window_position < b.window_position;
         });
-
-        // Check if there is a wrap around (e.g. 60,61,0,1) and find the pivot window
-        int pivot_window = -1;
-        if (packets.size() > 1) {
-
-            for (size_t i = 0; i < packets.size() - 1; ++i) {
-                if (packets[i].window_position + 1 != packets[i + 1].window_position) {
-                    pivot_window = packets[i + 1].window_position;
-                }
-            }
-        }
-
-        // Use pivot window to resort packets
-        if (pivot_window != -1) {
-            std::sort(packets.begin(), packets.end(),
-            [pivot_window](const dataProducts::NaluPacket& a, const dataProducts::NaluPacket& b) {
-                return ((a.window_position - pivot_window) % 62) < ((b.window_position - pivot_window) % 62);
-            });
-        }
 
         // Now stitch together these packets to form a waveform and push to the collection
         naluWaveformPtrCol_->push_back(std::make_unique<dataProducts::NaluWaveform>(packets));

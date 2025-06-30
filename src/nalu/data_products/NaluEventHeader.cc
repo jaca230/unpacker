@@ -8,6 +8,8 @@ NaluEventHeader::NaluEventHeader()
     ,event_info(0)
     ,event_index(0)
     ,event_reference_time(0)
+    ,time_threshold(0)
+    ,clock_frequency(0)
     ,packet_size(0)
     ,channel_mask(0)
     ,num_windows(0)
@@ -19,6 +21,8 @@ NaluEventHeader::NaluEventHeader(
     ,uint16_t event_info_arg
     ,uint32_t event_index_arg
     ,uint32_t event_reference_time_arg
+    ,uint32_t time_threshold_arg
+    ,uint32_t clock_frequency_arg
     ,uint16_t packet_size_arg
     ,uint64_t channel_mask_arg
     ,uint16_t num_windows_arg
@@ -29,13 +33,15 @@ NaluEventHeader::NaluEventHeader(
     ,event_info(event_info_arg)
     ,event_index(event_index_arg)
     ,event_reference_time(event_reference_time_arg)
+    ,time_threshold(time_threshold_arg)
+    ,clock_frequency(clock_frequency_arg)
     ,packet_size(packet_size_arg)
     ,channel_mask(channel_mask_arg)
     ,num_windows(num_windows_arg)
     ,num_packets(num_packets_arg)
 {}
 
-NaluEventHeader::~NaluEventHeader() {};
+NaluEventHeader::~NaluEventHeader() {}
 
 std::string NaluEventHeader::String() const {
     std::ostringstream oss;
@@ -45,6 +51,8 @@ std::string NaluEventHeader::String() const {
     oss << "    event_info:            " << std::dec << event_info << std::endl;
     oss << "    event_index:           " << std::dec << event_index << std::endl;
     oss << "    event_reference_time:  " << std::dec << event_reference_time << std::endl;
+    oss << "    time_threshold:        " << std::dec << time_threshold << std::endl;
+    oss << "    clock_frequency:       " << std::dec << clock_frequency << std::endl;
     oss << "    packet_size:           " << std::dec << packet_size << std::endl;
     oss << "    channel_mask:          " << std::hex << std::setw(16) << std::setfill('0') << channel_mask << std::endl;
     oss << "    num_windows:           " << std::dec << num_windows << std::endl;
@@ -52,6 +60,6 @@ std::string NaluEventHeader::String() const {
     return oss.str();
 }
 
-void NaluEventHeader::Show() const { 
+void NaluEventHeader::Show() const {
     std::cout << this->String();
 }

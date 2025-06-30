@@ -179,6 +179,12 @@ int main(int argc, char *argv[])
             nalu_event_footers = eventUnpacker->GetCollection<dataProducts::NaluEventFooter>("NaluEventFooterCollection");
             nalu_times = eventUnpacker->GetCollection<dataProducts::NaluTime>("NaluTimeCollection");
 
+            std::cout << "Waveforms: " << nalu_waveforms.size() << std::endl;
+            for (size_t i = 0; i < nalu_waveforms.size(); ++i) {
+                std::cout << "  waveform[" << i << "].trace.size() = " 
+              << nalu_waveforms[i].trace.size() << std::endl;
+}
+
             tree->Fill();
             nalu_event_headers.clear();
             nalu_packet_headers.clear();

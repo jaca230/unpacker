@@ -37,7 +37,12 @@ set(MIDASSYS_LIB_DIR "$ENV{MIDASSYS}/lib")
 # -----------------------------------------------------------
 find_package(ROOT REQUIRED COMPONENTS Core RIO Net Tree Hist)
 find_package(nlohmann_json REQUIRED)
+find_package(ZLIB REQUIRED)
 include(${ROOT_USE_FILE})
+
+# Find MIDAS static libraries
+find_library(MFE_LIB NAMES mfe PATHS "${MIDASSYS_LIB_DIR}" REQUIRED)
+find_library(MIDAS_LIB NAMES midas PATHS "${MIDASSYS_LIB_DIR}" REQUIRED)
 
 # -----------------------------------------------------------
 # Source and header files
@@ -90,7 +95,6 @@ endfunction()
 # Macro to add a library with dictionary and proper install/export
 # -----------------------------------------------------------
 macro(add_unpacker_lib name sources headers linkdef)
-  # Get all args passed to macro
   set(_args)
   foreach(_arg IN LISTS ARGN)
     list(APPEND _args "${_arg}")
@@ -106,15 +110,11 @@ macro(add_unpacker_lib name sources headers linkdef)
     set(ARG_DEPS)
   endif()
 
-  # Add library with ALL source files (both .cc and generated dict)
-  add_library(${name} SHARED 
-    ${sources} 
-    #${CMAKE_CURRENT_BINARY_DIR}/${name}_a.cxx
+  add_library(${name} SHARED
+    ${sources}
   )
 
-  # Generate dictionary source
   add_dictionary(${name} "${headers}" "${linkdef}")
-
 
   target_include_directories(${name}
     PUBLIC
@@ -150,8 +150,8 @@ add_unpacker_lib(
   DEPS common_data_products
        ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
        nlohmann_json::nlohmann_json
-       ${MIDASSYS_LIB_DIR}/libmidas.a
-       ${MIDASSYS_LIB_DIR}/libmfe.a
+       ${MFE_LIB}
+       ${MIDAS_LIB}
 )
 
 add_unpacker_lib(
@@ -171,6 +171,29 @@ add_unpacker_lib(
        nalu_data_products
        ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
 )
+
+# -----------------------------------------------------------
+# Add executable for main unpacker
+# -----------------------------------------------------------
+add_executable(unpack_main src/main.cc)
+
+target_include_directories(unpack_main PRIVATE ${ALL_INCLUDE_DIRS})
+
+target_link_libraries(unpack_main
+  PRIVATE
+    nalu_unpacking
+    nalu_data_products
+    common_unpacking
+    common_data_products
+    ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
+    nlohmann_json::nlohmann_json
+    ZLIB::ZLIB
+    ${MFE_LIB}
+    ${MIDAS_LIB}
+)
+
+# Optional: install the executable
+install(TARGETS unpack_main RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # -----------------------------------------------------------
 # Installation rules

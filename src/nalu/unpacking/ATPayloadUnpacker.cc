@@ -35,5 +35,7 @@ int ATPayloadUnpacker::Unpack(const uint64_t* words, unsigned int& wordNum) {
     // Clear data from parser
     naluTimeParser_->Clear();
 
+    utils::LoggerHolder::getInstance().DebugLogger << "  We reached the end an AT payload." << std::endl;
+
     return UNPACKING_SUCCESS;
 };
