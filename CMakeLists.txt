@@ -33,10 +33,28 @@ set(MIDASSYS_INCLUDE_DIRS
 set(MIDASSYS_LIB_DIR "$ENV{MIDASSYS}/lib")
 
 # -----------------------------------------------------------
+# CPM Setup for nlohmann_json
+# -----------------------------------------------------------
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
+
+CPMAddPackage(
+  NAME nlohmann_json
+  GITHUB_REPOSITORY nlohmann/json
+  VERSION 3.11.3
+  DOWNLOAD_ONLY YES
+)
+
+if(nlohmann_json_ADDED)
+  add_library(nlohmann_json_header_only INTERFACE)
+  target_include_directories(nlohmann_json_header_only INTERFACE
+    $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
+  )
+endif()
+
+# -----------------------------------------------------------
 # Find external dependencies (assumed installed on system)
 # -----------------------------------------------------------
 find_package(ROOT REQUIRED COMPONENTS Core RIO Net Tree Hist)
-find_package(nlohmann_json REQUIRED)
 include(${ROOT_USE_FILE})
 
 # -----------------------------------------------------------
@@ -90,7 +108,6 @@ endfunction()
 # Macro to add a library with dictionary and proper install/export
 # -----------------------------------------------------------
 macro(add_unpacker_lib name sources headers linkdef)
-  # Get all args passed to macro
   set(_args)
   foreach(_arg IN LISTS ARGN)
     list(APPEND _args "${_arg}")
@@ -106,15 +123,12 @@ macro(add_unpacker_lib name sources headers linkdef)
     set(ARG_DEPS)
   endif()
 
-  # Add library with ALL source files (both .cc and generated dict)
   add_library(${name} SHARED 
     ${sources} 
     #${CMAKE_CURRENT_BINARY_DIR}/${name}_a.cxx
   )
 
-  # Generate dictionary source
   add_dictionary(${name} "${headers}" "${linkdef}")
-
 
   target_include_directories(${name}
     PUBLIC
@@ -125,6 +139,13 @@ macro(add_unpacker_lib name sources headers linkdef)
   )
 
   if(ARG_DEPS)
+    # If nlohmann_json_header_only target exists, use it instead of the system package
+    foreach(dep IN LISTS ARG_DEPS)
+      if(dep STREQUAL "nlohmann_json::nlohmann_json" AND TARGET nlohmann_json_header_only)
+        list(REMOVE_ITEM ARG_DEPS dep)
+        list(APPEND ARG_DEPS nlohmann_json_header_only)
+      endif()
+    endforeach()
     target_link_libraries(${name} PUBLIC ${ARG_DEPS})
   endif()
 
@@ -149,7 +170,7 @@ add_unpacker_lib(
   "${CMAKE_CURRENT_SOURCE_DIR}/include/common/unpacking/LinkDef.h"
   DEPS common_data_products
        ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
-       nlohmann_json::nlohmann_json
+       nlohmann_json_header_only
        ${MIDASSYS_LIB_DIR}/libmidas.a
        ${MIDASSYS_LIB_DIR}/libmfe.a
 )
@@ -177,7 +198,6 @@ add_unpacker_lib(
 # -----------------------------------------------------------
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 
-  # Install shared libraries and archive files
   install(TARGETS
     common_data_products
     common_unpacking
@@ -189,7 +209,14 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
-  # Install header files preserving directory structure (no extra "unpacker" prefix)
+  if(TARGET nlohmann_json_header_only)
+    install(TARGETS nlohmann_json_header_only
+      EXPORT ${PROJECT_NAME}Targets
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+  endif()
+
+
   install(DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common
     ${CMAKE_CURRENT_SOURCE_DIR}/include/nalu
@@ -197,7 +224,6 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     FILES_MATCHING PATTERN "*.hh"
   )
 
-  # Install ROOT dictionary files by explicit paths
   foreach(lib IN ITEMS
     common_data_products
     common_unpacking
@@ -214,14 +240,12 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     )
   endforeach()
 
-  # Generate and install version file for config package
   write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/unpackerConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
   )
 
-  # Configure and install the Config.cmake file for find_package
   configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/unpackerConfig.cmake
@@ -234,7 +258,6 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/unpacker
   )
 
-  # Export package for use with find_package (exported targets)
   export(PACKAGE unpacker)
 
 endif()
