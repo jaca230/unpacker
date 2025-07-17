@@ -1,8 +1,8 @@
 #ifndef NALUWAVEFORM_HH 
 #define NALUWAVEFORM_HH
 
-#include "common/data_products/DataProduct.hh"
-#include "nalu/data_products/NaluPacket.hh"
+#include "unpacker/common/data_products/DataProduct.hh"
+#include "unpacker/nalu/data_products/NaluPacket.hh"
 
 namespace dataProducts {
 

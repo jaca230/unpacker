@@ -33,7 +33,7 @@ set(MIDASSYS_INCLUDE_DIRS
 set(MIDASSYS_LIB_DIR "$ENV{MIDASSYS}/lib")
 
 # -----------------------------------------------------------
-# CPM Setup for nlohmann_json
+# CPM Setup for nlohmann_json (header-only)
 # -----------------------------------------------------------
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 
@@ -48,7 +48,9 @@ if(nlohmann_json_ADDED)
   add_library(nlohmann_json_header_only INTERFACE)
   target_include_directories(nlohmann_json_header_only INTERFACE
     $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
+  add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json_header_only)
 endif()
 
 # -----------------------------------------------------------
@@ -65,10 +67,10 @@ file(GLOB_RECURSE COMMON_UNPACKING_SRCS CONFIGURE_DEPENDS src/common/unpacking/*
 file(GLOB_RECURSE NALU_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS src/nalu/data_products/*.cc)
 file(GLOB_RECURSE NALU_UNPACKING_SRCS CONFIGURE_DEPENDS src/nalu/unpacking/*.cc)
 
-file(GLOB_RECURSE COMMON_DATA_PRODUCTS_HEADERS CONFIGURE_DEPENDS include/common/data_products/*.hh)
-file(GLOB_RECURSE COMMON_UNPACKING_HEADERS CONFIGURE_DEPENDS include/common/unpacking/*.hh)
-file(GLOB_RECURSE NALU_DATA_PRODUCTS_HEADERS CONFIGURE_DEPENDS include/nalu/data_products/*.hh)
-file(GLOB_RECURSE NALU_UNPACKING_HEADERS CONFIGURE_DEPENDS include/nalu/unpacking/*.hh)
+file(GLOB_RECURSE COMMON_DATA_PRODUCTS_HEADERS CONFIGURE_DEPENDS include/unpacker/common/data_products/*.hh)
+file(GLOB_RECURSE COMMON_UNPACKING_HEADERS CONFIGURE_DEPENDS include/unpacker/common/unpacking/*.hh)
+file(GLOB_RECURSE NALU_DATA_PRODUCTS_HEADERS CONFIGURE_DEPENDS include/unpacker/nalu/data_products/*.hh)
+file(GLOB_RECURSE NALU_UNPACKING_HEADERS CONFIGURE_DEPENDS include/unpacker/nalu/unpacking/*.hh)
 
 # Consolidate all headers and include dirs
 set(ALL_HEADERS
@@ -108,38 +110,22 @@ endfunction()
 # Macro to add a library with dictionary and proper install/export
 # -----------------------------------------------------------
 macro(add_unpacker_lib name sources headers linkdef)
-  set(_args)
-  foreach(_arg IN LISTS ARGN)
-    list(APPEND _args "${_arg}")
-  endforeach()
+  cmake_parse_arguments(ARG "" "" "DEPS" ${ARGN})
 
-  set(options)
-  set(oneValueArgs)
-  set(multiValueArgs DEPS)
-
-  if(_args)
-    cmake_parse_arguments(ARG "" "" "DEPS" ${_args})
-  else()
-    set(ARG_DEPS)
-  endif()
-
-  add_library(${name} SHARED 
-    ${sources} 
-    #${CMAKE_CURRENT_BINARY_DIR}/${name}_a.cxx
-  )
+  add_library(${name} SHARED ${sources})
 
   add_dictionary(${name} "${headers}" "${linkdef}")
 
   target_include_directories(${name}
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/unpacker>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
       ${MIDASSYS_INCLUDE_DIRS}
       ${ROOT_INCLUDE_DIRS}
   )
 
   if(ARG_DEPS)
-    # If nlohmann_json_header_only target exists, use it instead of the system package
+    # Replace nlohmann_json::nlohmann_json with header-only target if available
     foreach(dep IN LISTS ARG_DEPS)
       if(dep STREQUAL "nlohmann_json::nlohmann_json" AND TARGET nlohmann_json_header_only)
         list(REMOVE_ITEM ARG_DEPS dep)
@@ -153,13 +139,13 @@ macro(add_unpacker_lib name sources headers linkdef)
 endmacro()
 
 # -----------------------------------------------------------
-# Define your libraries here
+# Define libraries
 # -----------------------------------------------------------
 add_unpacker_lib(
   common_data_products
   "${COMMON_DATA_PRODUCTS_SRCS}"
   "${COMMON_DATA_PRODUCTS_HEADERS}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/common/data_products/LinkDef.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/unpacker/common/data_products/LinkDef.h"
   DEPS ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
 )
 
@@ -167,19 +153,19 @@ add_unpacker_lib(
   common_unpacking
   "${COMMON_UNPACKING_SRCS}"
   "${COMMON_UNPACKING_HEADERS}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/common/unpacking/LinkDef.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/unpacker/common/unpacking/LinkDef.h"
   DEPS common_data_products
        ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
-       nlohmann_json_header_only
-       ${MIDASSYS_LIB_DIR}/libmidas.a
-       ${MIDASSYS_LIB_DIR}/libmfe.a
+       nlohmann_json::nlohmann_json
+       "${MIDASSYS_LIB_DIR}/libmidas.a"
+       "${MIDASSYS_LIB_DIR}/libmfe.a"
 )
 
 add_unpacker_lib(
   nalu_data_products
   "${NALU_DATA_PRODUCTS_SRCS}"
   "${NALU_DATA_PRODUCTS_HEADERS}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/nalu/data_products/LinkDef.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/unpacker/nalu/data_products/LinkDef.h"
   DEPS common_data_products
 )
 
@@ -187,7 +173,7 @@ add_unpacker_lib(
   nalu_unpacking
   "${NALU_UNPACKING_SRCS}"
   "${NALU_UNPACKING_HEADERS}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/nalu/unpacking/LinkDef.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/unpacker/nalu/unpacking/LinkDef.h"
   DEPS common_unpacking
        nalu_data_products
        ROOT::Core ROOT::RIO ROOT::Net ROOT::Tree ROOT::Hist
@@ -206,28 +192,21 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     EXPORT unpackerTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
   if(TARGET nlohmann_json_header_only)
     install(TARGETS nlohmann_json_header_only
-      EXPORT ${PROJECT_NAME}Targets
+      EXPORT unpackerTargets
       INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
   endif()
 
-
   install(DIRECTORY
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/nalu
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unpacker
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/unpacker
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.hh"
-  )
-
-  install(EXPORT unpackerTargets
-    FILE unpackerTargets.cmake
-    NAMESPACE unpacker::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/unpacker
   )
 
   foreach(lib IN ITEMS
@@ -245,6 +224,12 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
       OPTIONAL
     )
   endforeach()
+
+  install(EXPORT unpackerTargets
+    FILE unpackerTargets.cmake
+    NAMESPACE unpacker::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/unpacker
+  )
 
   write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/unpackerConfigVersion.cmake

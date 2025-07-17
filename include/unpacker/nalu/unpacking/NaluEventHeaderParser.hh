@@ -2,8 +2,8 @@
 #define NALUEVENTHEADERPARSER_HH
 
 //Custom
-#include "common/unpacking/Parser.hh"
-#include "nalu/data_products/NaluEventHeader.hh"
+#include "unpacker/common/unpacking/Parser.hh"
+#include "unpacker/nalu/data_products/NaluEventHeader.hh"
 
 namespace parsers {
 

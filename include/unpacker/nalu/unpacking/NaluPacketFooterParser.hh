@@ -2,8 +2,8 @@
 #define NALUPACKETFOOTERERPARSER_HH
 
 //Custom
-#include "common/unpacking/Parser.hh"
-#include "nalu/data_products/NaluPacketFooter.hh"
+#include "unpacker/common/unpacking/Parser.hh"
+#include "unpacker/nalu/data_products/NaluPacketFooter.hh"
 
 namespace parsers {
 
