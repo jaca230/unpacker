@@ -133,7 +133,7 @@ macro(add_unpacker_lib name sources headers linkdef)
   target_include_directories(${name}
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/unpacker>
       ${MIDASSYS_INCLUDE_DIRS}
       ${ROOT_INCLUDE_DIRS}
   )
@@ -220,7 +220,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
   install(DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common
     ${CMAKE_CURRENT_SOURCE_DIR}/include/nalu
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unpacker
     FILES_MATCHING PATTERN "*.hh"
   )
 
