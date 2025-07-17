@@ -224,6 +224,12 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     FILES_MATCHING PATTERN "*.hh"
   )
 
+  install(EXPORT unpackerTargets
+    FILE unpackerTargets.cmake
+    NAMESPACE unpacker::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/unpacker
+  )
+
   foreach(lib IN ITEMS
     common_data_products
     common_unpacking
