@@ -62,10 +62,10 @@ include(${ROOT_USE_FILE})
 # -----------------------------------------------------------
 # Source and header files
 # -----------------------------------------------------------
-file(GLOB_RECURSE COMMON_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS src/common/data_products/*.cc)
-file(GLOB_RECURSE COMMON_UNPACKING_SRCS CONFIGURE_DEPENDS src/common/unpacking/*.cc)
-file(GLOB_RECURSE NALU_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS src/nalu/data_products/*.cc)
-file(GLOB_RECURSE NALU_UNPACKING_SRCS CONFIGURE_DEPENDS src/nalu/unpacking/*.cc)
+file(GLOB_RECURSE COMMON_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS src/unpacker/common/data_products/*.cc)
+file(GLOB_RECURSE COMMON_UNPACKING_SRCS CONFIGURE_DEPENDS src/unpacker/common/unpacking/*.cc)
+file(GLOB_RECURSE NALU_DATA_PRODUCTS_SRCS CONFIGURE_DEPENDS src/unpacker/nalu/data_products/*.cc)
+file(GLOB_RECURSE NALU_UNPACKING_SRCS CONFIGURE_DEPENDS src/unpacker/nalu/unpacking/*.cc)
 
 file(GLOB_RECURSE COMMON_DATA_PRODUCTS_HEADERS CONFIGURE_DEPENDS include/unpacker/common/data_products/*.hh)
 file(GLOB_RECURSE COMMON_UNPACKING_HEADERS CONFIGURE_DEPENDS include/unpacker/common/unpacking/*.hh)
